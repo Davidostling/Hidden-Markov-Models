@@ -21,21 +21,21 @@ pi = initializeMatrix(int(matrixList[2][0]), int(matrixList[2][1]), matrixList[2
 Ostr =  matrixList[3][1:]                                                              
 O = [int(i) for i in Ostr[:-1]]  # Sequence of Emissions                                                          
 
-T = int(matrixList[0][0]) #Number of A rows
-N = int(matrixList[3][0]) #Number of Emissions                                                              
+N = int(matrixList[0][0]) #Number of A rows
+T = int(matrixList[3][0]) #Number of Emissions                                                              
 
 def initAlpha():
-    firstAlpha = [0 for _ in range(T)]
-    for i in range(T):
+    firstAlpha = [0 for _ in range(N)]
+    for i in range(N):
         firstAlpha[i] = B[i][O[0]] * pi[0][i]
     return firstAlpha
 
 def forwardAlg():
     alpha = initAlpha()
     
-    for i in range(1, N):
+    for i in range(1, T):
         tempAlpha = []
-        for j in range(T):
+        for j in range(N):
             tempAlpha.append(sumCalc(alpha,j)*B[j][O[i]])
         alpha = tempAlpha
 
@@ -43,7 +43,7 @@ def forwardAlg():
     
 def sumCalc(alpha, index):
     sumcalc = 0
-    for i in range(T):
+    for i in range(N):
         sumcalc+= alpha[i] * A[i][index]
     return sumcalc
 
