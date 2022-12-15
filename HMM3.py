@@ -1,4 +1,5 @@
 import sys
+import math
 
 matrixList = []
 read = sys.stdin.read().split("\n")
@@ -26,10 +27,14 @@ def multiplyMatrix(X,Y):
                 result[xRow][yColumn] += float(X[xRow][yRow]) * float(Y[yRow][yColumn])
     return result
 
+
+#### BYT
 def matrixToStringPrint(matrix):
-    strMatrix = str(len(matrix))+ ' ' + str(len(matrix[0]))
-    strMatrix += ' ' +' '.join(map(str, [el for row in matrix for el in row]))
-    print(strMatrix)
+    print(str(len(matrix)) + ' ' + str(len(matrix[0])), end=' ')
+    for i in matrix:
+        for j in i:
+            print(round(j, 6), end=' ')
+    print()
 
 A = initializeMatrix(int(matrixList[0][0]), int(matrixList[0][1]), matrixList[0][2:]) #transition
 B = initializeMatrix(int(matrixList[1][0]), int(matrixList[1][1]), matrixList[1][2:]) #emission matrix
@@ -38,6 +43,7 @@ Ostr =  matrixList[3][1:]
 O = [int(i) for i in Ostr[:-1]]  # Sequence of Emissions                                                          
 
 N = int(matrixList[0][0]) #Number of A rows
+
 T = int(matrixList[3][0]) #Number of Emissions      
 
 def initAlpha():
@@ -59,8 +65,9 @@ def forwardAlg():
     alpha, c = initAlpha()
 
     # timeStep
+    c[0] = 1/c[0]
     for i in range(N):
-        alpha[0][i] /= c[0]
+        alpha[0][i] *= c[0]
  
     for i in range(1, T):
         tempAlpha = []
@@ -71,19 +78,18 @@ def forwardAlg():
             tempAlpha.append(a)
        
     # timeStep
+        c[i] = 1 /c[i]
         for j in range(N):
-          alpha[i][j] = tempAlpha[j] / c[i]
+          alpha[i][j] = tempAlpha[j] * c[i]
         
    
     return alpha, c
-
 
 def initBeta(c):
     firstBeta =  [[0 for _ in range(N)] for _ in range(T)]
 
     for i in range(N):
-        firstBeta[-1][i] = 1 / c[-1]
-    
+        firstBeta[-1][i] = c[-1]
     return firstBeta
 
 
@@ -103,25 +109,96 @@ def backwardsAlg(c):
             tempBeta.append(b)
         
         # timeStep
-        for j in range(N):
-          beta[i][j] = tempBeta[j]/ c[i]
+        for j in range(N): 
+          beta[i][j] = tempBeta[j] * c[i]
 
     return beta
 
 
-alpha, c = forwardAlg()
-beta = backwardsAlg(c)
-# print('alpha', alpha)
-# print('c', c)
-# print('beta', beta) 
+#### BYT
+def calcDiGamma(alpha, beta, indexI, indexJ, indexZ):
+    currentDiGamma = alpha[indexI][indexJ]* A[indexJ][indexZ] * B[indexZ][O[indexI+1]]* beta[indexI+1][indexZ]
+    return currentDiGamma
 
-# def calcGamma(indexI, indexJ, indexK):
-# def calcDiGamma():
-# def logProb():
-# def estimate():
-# def baumWelch():
+def calcGamma(alpha, beta):
+    #Declarations
+    gamma = [[0.0 for _ in range(N)] for _ in range(T)]
+    diGamma = [[[0.0 for _ in range(N)] for _ in range(N)] for _ in range(T)]
+
+    for i in range(T-1):
+        for j in range(N):
+            for z in range(N):
+                diGamma[i][j][z] = calcDiGamma(alpha, beta, i, j, z)
+                gamma[i][j] = gamma[i][j] + diGamma[i][j][z]
+    
+    for i in range(N):
+        gamma[T-1][i] = alpha[T-1][i]
+    
+    return [gamma, diGamma]
 
 
-# rA, rB = baumWelch()
-# matrixToStringPrint(rA)
-# matrixToStringPrint(rB)
+    
+
+# log(P(O|lambda))
+def logProb(c):
+    logProb = map(math.log, c)
+    return -sum(logProb)
+
+#### BYT
+def estimate(gamma, diGamma):
+
+    # estimate pi
+    for i in range(N):
+        pi[0][i] = gamma[0][i]
+
+    # estimate A
+    for i in range(N):
+        lower = 0
+        for j in range(T-1):
+            lower += gamma[j][i]
+
+        for j in range(N):
+            upper= 0
+            for k in range(T-1):
+                upper += diGamma[k][i][j] 
+            A[i][j] = upper/lower
+        
+    
+    # estimate B
+    for i in range(N):
+        lower = 0
+        for j in range(T):
+            lower += gamma[j][i]
+    
+        for j in range(len(B)):
+            upper= 0
+            for k in range(T):
+                if(int(O[k]) == j):
+                    upper += gamma[k][i]
+            B[i][j] = upper/lower
+
+
+#### BYT
+def baumWelch():
+    oldLogProb = -math.inf
+    alpha, c = forwardAlg()
+    beta = backwardsAlg(c)
+    gamma, diGamma = calcGamma(alpha, beta)
+
+    for i in range(100):
+        alpha, c = forwardAlg()
+        beta = backwardsAlg(c)
+        gamma, diGamma = calcGamma(alpha, beta)
+        estimate(gamma,diGamma)
+        log_prob = logProb(c)
+
+        if log_prob > oldLogProb:
+            oldLogProb = log_prob
+        else: 
+            break
+    
+    return A, B
+        
+rA,rB = baumWelch()
+matrixToStringPrint(rA)
+matrixToStringPrint(rB)
