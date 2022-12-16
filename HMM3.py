@@ -28,13 +28,10 @@ def multiplyMatrix(X,Y):
     return result
 
 
-#### BYT
 def matrixToStringPrint(matrix):
-    print(str(len(matrix)) + ' ' + str(len(matrix[0])), end=' ')
-    for i in matrix:
-        for j in i:
-            print(round(j, 6), end=' ')
-    print()
+    strMatrix = str(len(matrix))+ ' ' + str(len(matrix[0]))
+    strMatrix += ' ' +' '.join(map(str, [round(el, 6) for row in matrix for el in row]))
+    print(strMatrix)
 
 A = initializeMatrix(int(matrixList[0][0]), int(matrixList[0][1]), matrixList[0][2:]) #transition
 B = initializeMatrix(int(matrixList[1][0]), int(matrixList[1][1]), matrixList[1][2:]) #emission matrix
@@ -115,6 +112,8 @@ def backwardsAlg(c):
     return beta
 
 
+
+
 #### BYT
 def calcDiGamma(alpha, beta, indexI, indexJ, indexZ):
     currentDiGamma = alpha[indexI][indexJ]* A[indexJ][indexZ] * B[indexZ][O[indexI+1]]* beta[indexI+1][indexZ]
@@ -134,18 +133,18 @@ def calcGamma(alpha, beta):
     for i in range(N):
         gamma[T-1][i] = alpha[T-1][i]
     
-    return [gamma, diGamma]
-
-
-    
+    return gamma, diGamma
 
 # log(P(O|lambda))
-def logProb(c):
+def logProb():
+    _, c = forwardAlg()
     logProb = map(math.log, c)
     return -sum(logProb)
 
-#### BYT
-def estimate(gamma, diGamma):
+def reEstimate():
+    alpha, c = forwardAlg()
+    beta = backwardsAlg(c)
+    gamma, diGamma = calcGamma(alpha, beta)
 
     # estimate pi
     for i in range(N):
@@ -153,52 +152,46 @@ def estimate(gamma, diGamma):
 
     # estimate A
     for i in range(N):
-        lower = 0
+        denom = 0
         for j in range(T-1):
-            lower += gamma[j][i]
+            denom += gamma[j][i]
 
         for j in range(N):
-            upper= 0
+            nummer= 0
             for k in range(T-1):
-                upper += diGamma[k][i][j] 
-            A[i][j] = upper/lower
+                nummer += diGamma[k][i][j] 
+            A[i][j] = nummer/denom
         
     
     # estimate B
     for i in range(N):
-        lower = 0
+        denom = 0
         for j in range(T):
-            lower += gamma[j][i]
+            denom += gamma[j][i]
     
         for j in range(len(B)):
-            upper= 0
+            nummer= 0
             for k in range(T):
                 if(int(O[k]) == j):
-                    upper += gamma[k][i]
-            B[i][j] = upper/lower
+                    nummer += gamma[k][i]
+            B[i][j] = nummer/denom
 
 
-#### BYT
 def baumWelch():
     oldLogProb = -math.inf
-    alpha, c = forwardAlg()
-    beta = backwardsAlg(c)
-    gamma, diGamma = calcGamma(alpha, beta)
+    i = 0
 
-    for i in range(100):
-        alpha, c = forwardAlg()
-        beta = backwardsAlg(c)
-        gamma, diGamma = calcGamma(alpha, beta)
-        estimate(gamma,diGamma)
-        log_prob = logProb(c)
+    while i < 100: 
+        reEstimate()
+        log_prob = logProb()
+        oldLogProb = min(oldLogProb, log_prob)
 
-        if log_prob > oldLogProb:
-            oldLogProb = log_prob
-        else: 
+        if log_prob < oldLogProb:
             break
+        i += 1
     
-    return A, B
+    matrixToStringPrint(A)
+    matrixToStringPrint(B)
         
-rA,rB = baumWelch()
-matrixToStringPrint(rA)
-matrixToStringPrint(rB)
+baumWelch()
+
