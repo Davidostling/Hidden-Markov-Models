@@ -136,8 +136,8 @@ def declareGammas():
 
 
 def handleEdgeCaseGamma(gamma, alpha):
-    for i in range(N):
-        gamma[T-1][i] = alpha[T-1][i]
+    for i, element in enumerate(gamma[T-1]):
+        alpha[T-1][i] = element
 
 
 def calcGamma(alpha, beta):
