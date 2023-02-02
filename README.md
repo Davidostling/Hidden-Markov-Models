@@ -1,5 +1,8 @@
 ﻿# Hidden-Markov-Models
 
+ # General information
+ A Hidden Markov Model (HMM) is a statistical model used to represent a sequence of observations that are generated from a underlying, unobservable (hidden) state. It is a type of probabilistic graphical model where the sequence of hidden states are related to the observed data through the emission probabilities.
+
 
 - $\mathrm{A}=$ transition matrix ( Hidden in HMM)
 
